@@ -7,6 +7,8 @@ public class Modifiers : MonoBehaviour
 {
     public static Modifiers Instance;
 
+    public static event Action OnModifierChanged;
+
     [field: SerializeField] public int maxCustomers { get; private set; } = 1;
     [field: SerializeField] public int maxCashiers { get; private set; } = 1;
     [field: SerializeField] public int maxCooks { get; private set; } = 1;
@@ -37,56 +39,71 @@ public class Modifiers : MonoBehaviour
         maxCooks += amount;
     }
 
-    public void IncreaseCostMultiplier(OrderItem orderItem)
+    void IncreaseCostMultiplier(OrderItem orderItem)
     {
-        foreach (WorkstationUpgrades upgrades in workstationUpgrades)
-        {
-            Debug.Log("Comparing: " + upgrades.orderItem.itemName + " with " + orderItem.itemName);
-            if (upgrades.orderItem == orderItem)
-            {
-                upgrades.costMultiplier *= 1.5f;
-                return;
-            }
-        }
+        // every 25 levels double the rank modifier
+
+        WorkstationUpgrades upgrades = GetWorkstationUpgradesForOrderItem(orderItem);
+        upgrades.costMultiplier *= 1.5f;
+        OnModifierChanged?.Invoke();
     }
 
     public void DecreaseSpeedMultiplier(OrderItem orderItem)
     {
-        foreach (WorkstationUpgrades upgrades in workstationUpgrades)
-        {
-
-            if (upgrades.orderItem == orderItem)
-            {
-                upgrades.speedMultiplier *= 0.87f;
-                return;
-            }
-        }
+        WorkstationUpgrades upgrades = GetWorkstationUpgradesForOrderItem(orderItem);
+        upgrades.speedMultiplier *= 0.87f;
+        OnModifierChanged?.Invoke();
     }
 
     public float GetOrderItemCostMultiplier(OrderItem orderItem)
     {
-        foreach (WorkstationUpgrades upgrades in workstationUpgrades)
-        {
-            if (upgrades.orderItem == orderItem)
-            {
-                return upgrades.costMultiplier;
-            }
-        }
-
-        return 1f;
+        WorkstationUpgrades upgrades = GetWorkstationUpgradesForOrderItem(orderItem);
+        return upgrades.costMultiplier;
     }
 
     public float GetOrderItemSpeedMultiplier(OrderItem orderItem)
+    {
+        WorkstationUpgrades upgrades = GetWorkstationUpgradesForOrderItem(orderItem);
+        return upgrades.speedMultiplier;
+    }
+
+    public int GetUpgradeLevel(OrderItem orderItem)
+    {
+        WorkstationUpgrades upgrades = GetWorkstationUpgradesForOrderItem(orderItem);
+        return upgrades.upgradeLevel;
+    }
+
+    public Currency GetUpgradeCost(OrderItem orderItem)
+    {
+        WorkstationUpgrades upgrades = GetWorkstationUpgradesForOrderItem(orderItem);
+        return new Currency(upgrades.orderItem.itemBaseUpgradeCost * (upgrades.upgradeLevel + 1));
+    }
+
+    public bool TryUpgradeLevel(OrderItem orderItem)
+    {
+        if (!Wallet.Instance.TryRemoveGold(GetUpgradeCost(orderItem)))
+            return false;
+
+        WorkstationUpgrades upgrades = GetWorkstationUpgradesForOrderItem(orderItem);
+
+        upgrades.upgradeLevel++;
+        IncreaseCostMultiplier(upgrades.orderItem);
+
+        OnModifierChanged?.Invoke();
+
+        return true;
+    }
+
+    WorkstationUpgrades GetWorkstationUpgradesForOrderItem(OrderItem orderItem)
     {
         foreach (WorkstationUpgrades upgrades in workstationUpgrades)
         {
             if (upgrades.orderItem == orderItem)
             {
-                return upgrades.speedMultiplier;
+                return upgrades;
             }
         }
-
-        return 1f;
+        return null;
     }
 }
 
@@ -96,4 +113,5 @@ public class WorkstationUpgrades
     public OrderItem orderItem;
     public float costMultiplier = 1f;
     public float speedMultiplier = 1f;
+    public int upgradeLevel = 0;
 }

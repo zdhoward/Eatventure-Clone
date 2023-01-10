@@ -9,6 +9,7 @@ public class OrderItem : ScriptableObject
     public Sprite itemIcon;
     public double itemBaseCost;
     public float itemBaseCookTime;
+    public double itemBaseUpgradeCost;
 
     public double GetCost()
     {

@@ -51,6 +51,11 @@ public class Wallet : MonoBehaviour
         return true;
     }
 
+    public bool TryRemoveGold(Currency amtToRemove)
+    {
+        return TryRemoveGold((double)amtToRemove);
+    }
+
     public Currency GetGoldBalance()
     {
         return goldAmount;

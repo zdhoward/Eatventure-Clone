@@ -83,6 +83,11 @@ public class Currency
         return valueString + shortNotation[shortNotationIndex];
     }
 
+    public static explicit operator double(Currency currency)
+    {
+        return currency.value;
+    }
+
     public static Currency operator +(Currency a, Currency b)
     {
         return new Currency(a.value + b.value);
